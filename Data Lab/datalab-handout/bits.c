@@ -244,6 +244,16 @@ int conditional(int x, int y, int z)
  */
 int isLessOrEqual(int x, int y)
 {
+  int negX = ~x + 1;                     //-x
+  int ySubX = y + negX;                  // y-x;
+  int checkSign_ySubX = ySubX >> 31 & 1; // y-x的 符号
+  // 获取x和y的符号
+  int leftSign = 1 << 31; // 符号位为1的二进制
+  int xSign = x & leftSign;
+  int ySign = y & leftSign;
+  int signBitXor = xSign ^ ySign;
+  signBitXor = (signBitXor >> 31) & 1;
+  return (!signBitXor) & (!checkSign_ySubX) | (signBitXor & (xSign >> 31));
   return 2;
 }
 // 4
@@ -257,7 +267,7 @@ int isLessOrEqual(int x, int y)
  */
 int logicalNeg(int x)
 {
-  return 2;
+  return ((x | (~x + 1)) >> 31) + 1; // 右移空缺位用符号位补足
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -271,9 +281,22 @@ int logicalNeg(int x)
  *  Max ops: 90
  *  Rating: 4
  */
-int howManyBits(int x)
+int howManyBits(int x) // 类似于二分的思想，逐渐找到最高位为1的情况,一旦高位有数据，完全就可以抛弃低位不管
 {
-  return 0;
+  int b16, b8, b4, b2, b1;
+  int sign = x >> 31;             // 获取x的符号
+  x = (sign & ~x) || (~sign & x); // 这里之所有有分支选择的功能，是因为利用了0和任何数或都等于任何数本身
+  int b16 = !!(x >> 16) << 4;
+  x >>= b16;
+  int b8 = !!(x >> 8) << 3;
+  x >>= b8;
+  int b4 = !!(x >> 4) << 2;
+  x >>= b4;
+  int b2 = !!(x >> 2) << 1;
+  x >>= b2;
+  int b1 = !!(x >> 1) << 0;
+  x >>= b1;
+  return b16 + b8 + b4 + b2 + b1 + 1; // 别忘记加上符号位
 }
 // float
 /*
